@@ -98,8 +98,8 @@ public class ComplexExamples {
 	    	.entrySet()
 	    	.stream()
 	    	.forEach(p -> {
-	    		System.out.println("Key:" + p.getKey());
-	    		System.out.println("Key:" + p.getValue().size());
+	    		System.out.println("Key: " + p.getKey());
+	    		System.out.println("Value: " + p.getValue().size());
 	    	});
     }
     
