@@ -42,6 +42,7 @@ public class ComplexExamples {
     }
 
     private static Person[] RAW_DATA = new Person[]{
+    		
             new Person(0, "Harry"),
             new Person(0, "Harry"), // дубликат
             new Person(1, "Harry"), // тёзка
@@ -53,8 +54,26 @@ public class ComplexExamples {
             new Person(5, "Amelia"),
             new Person(6, "Amelia"),
             new Person(7, "Amelia"),
-            new Person(8, "Amelia"),
+            new Person(8, "Amelia")
     };
+    
+    private static Person[] RAW_DATA_WITH_NULL = new Person[]{
+    		
+            new Person(0, "Harry"),
+            new Person(0, "Harry"), // дубликат
+            new Person(1, "Harry"), // тёзка
+            new Person(2, "Harry"),
+            new Person(3, "Emily"),
+            new Person(4, "Jack"),
+            new Person(4, "Jack"),
+            new Person(5, "Amelia"),
+            null,
+            new Person(5, "Amelia"),
+            new Person(6, "Amelia"),
+            new Person(7, "Amelia"),
+            new Person(8, "Amelia")
+    };
+    
         /*  Raw data:
 
         0 - Harry
@@ -89,18 +108,30 @@ public class ComplexExamples {
         1 - Jack (4)
      */
 
-    public static void personDeduplicatingSortingAndGrouping(Person[] persons) {
+    public static Map<String, List<Person>> personDeduplicatingSortingAndGrouping(Person[] persons) {
     	
-    	Arrays.stream(RAW_DATA)
-    		.distinct() // удаляю дубликаты. Данный метод для сравнения элементов потока использует equals()
-    		.sorted(Comparator.comparingInt(Person::getId))
-	    	.collect(Collectors.groupingBy(Person::getName, Collectors.toList()))
-	    	.entrySet()
-	    	.stream()
-	    	.forEach(p -> {
-	    		System.out.println("Key:" + p.getKey());
-	    		System.out.println("Key:" + p.getValue().size());
-	    	});
+    	return Arrays.stream(persons)
+    			.map(p -> Optional.ofNullable(p).orElse(new Person(0, "Default")))
+    			.distinct() // удаляю дубликаты. Данный метод для сравнения элементов потока использует equals()
+    			.sorted(Comparator.comparingInt(Person::getId))
+    			.collect(Collectors.groupingBy(Person::getName, Collectors.toList()));
+    }
+    
+    public static String personsMapToString(Map<String, List<Person>> personsMap) {
+    	
+    	StringBuilder builder = new StringBuilder();
+    	personsMap.entrySet()
+		    	.stream()
+		    	.forEach(p -> {
+		    		builder.append("Key: ");
+		    		builder.append(p.getKey());
+		    		builder.append("\n");
+		    		builder.append("Value: ");
+		    		builder.append(p.getValue().size());
+		    		builder.append("\n");
+		    	});
+    	
+    	return builder.toString().trim();
     }
     
     /**
@@ -114,15 +145,19 @@ public class ComplexExamples {
      */
     public static int[] findCouple(int[] input, int target) throws Exception {
     	
-    	for (int y = 0; y < input.length; y++) {
+    	int[] inputArray = Optional.ofNullable(input)
+    			.orElseThrow(() -> new IllegalArgumentException("Массив не должен быть null!"));
+    	
+    	for (int y = 0; y < inputArray.length; y++) {
     		// дабы исключить повторяющиеся сочетания для проверки, на каждой новой итерации внешнего цикла
     		// внутренний цикл начинается с инкрементации индекса. 
-    		for (int x = y; x < input.length; x++) {
-    			if (input[x] <= target && input[y] <= target && input[y] + input[x] == target) {
-    				return new int[] {input[y], input[x]};
+    		for (int x = y; x < inputArray.length; x++) {
+    			if (inputArray[x] <= target && inputArray[y] <= target && inputArray[y] + inputArray[x] == target) {
+    				return new int[] {inputArray[y], inputArray[x]};
     			}
     		}
     	}
+    	
     	throw new Exception("Входной массив не содержит ни одной пары чисел, которые в сумме давали бы значение " + target + "!");
     }
     
@@ -135,10 +170,11 @@ public class ComplexExamples {
      */
     public static boolean fuzzySearch(String input, String target) {
 		
-    	int matchRemains = input.length(); // счетчик оставшихся совпадений, равный длине входной строки
+    	int matchRemains = Optional.ofNullable(input).orElseThrow().length(); // счетчик оставшихся совпадений, равный длине входной строки
     	int inputCharsOffset = 0; // смещение индекса текущего символа во входной строке
     	char[] inputChars = input.toCharArray();
-    	char[] targetChars = target.toCharArray();
+    	char[] targetChars = Optional.ofNullable(target).orElseThrow().toCharArray();
+    	
     	for (var tc : targetChars) { // итерируюсь по порядку по всем символам целевой строки
     		// если текущий символ целевой строки совпадает с символом входной строки с текущим смещением
     		if (tc == inputChars[inputCharsOffset]) {
@@ -148,15 +184,15 @@ public class ComplexExamples {
     		}
     		if (matchRemains == 0) { // если не осталось никакого символа во входной строке, который еще не совпал с каким-либо
     			// из целевой строки, то выхожу из цикла
-    			System.out.println("true");
     			return true;
     		}
     	}
-    	System.out.println("false");
+    	
     	return false;
     }
     
     public static void main(String[] args) {
+    	
         System.out.println("Raw data:");
         System.out.println();
 
@@ -165,16 +201,13 @@ public class ComplexExamples {
         }
 
         System.out.println();
-        System.out.println("**************************************************");
-        System.out.println();
-        System.out.println("Duplicate filtered, grouped by name, sorted by name and id:");
-        System.out.println();
 
         /*
         Task1
             Убрать дубликаты, отсортировать по идентификатору, сгруппировать по имени
 
-            Что должно получиться Key: Amelia
+            Что должно получиться 
+            	Key: Amelia
                 Value:4
                 Key: Emily
                 Value:1
@@ -184,8 +217,38 @@ public class ComplexExamples {
                 Value:1
          */
 
-        personDeduplicatingSortingAndGrouping(RAW_DATA);
-        System.out.println();
+        Map<String, List<Person>> personsMap = 
+        		personDeduplicatingSortingAndGrouping(RAW_DATA);
+        Map<String, List<Person>> personsMapWithDefault = 
+        		personDeduplicatingSortingAndGrouping(RAW_DATA_WITH_NULL);
+        
+        String expected = 
+        		"Key: Amelia\n"
+        		+ "Value: 4\n"
+        		+ "Key: Emily\n"
+        		+ "Value: 1\n"
+        		+ "Key: Harry\n"
+        		+ "Value: 3\n"
+        		+ "Key: Jack\n"
+        		+ "Value: 1";
+        
+        String expectedIfContainsNullPerson = 
+        		"Key: Amelia\n"
+        		+ "Value: 4\n"
+        		+ "Key: Emily\n"
+        		+ "Value: 1\n"
+        		+ "Key: Harry\n"
+        		+ "Value: 3\n"
+        		+ "Key: Jack\n"
+        		+ "Value: 1\n"
+        		+ "Key: Default\n"
+        		+ "Value: 1";
+        
+        String actual = personsMapToString(personsMap);
+        assert expected.equals(actual);
+        
+        actual = personsMapToString(personsMapWithDefault);
+        assert expectedIfContainsNullPerson.equals(actual);
 
         /*
         Task2
@@ -193,12 +256,19 @@ public class ComplexExamples {
             [3, 4, 2, 7], 10 -> [3, 7] - вывести пару менно в скобках, которые дают сумму - 10
          */
 
-        int[] input = new int[] {3, 4, 2, 7};
+        int[] input, expectedArray, actualArray;
         int target = 10;
+        
+        input = new int[] {3, 4, 2, 7};
+        expectedArray = new int[] {3, 7};
+        
         try {
-        	System.out.println("Исходный массив: " + Arrays.toString(input));
-        	System.out.println("Первая пара чисел, дающая в сумме значение "
-        			+ target + ": " + Arrays.toString(findCouple(input, target)));
+        	
+			actualArray = findCouple(input, target);
+			assert Arrays.equals(expectedArray, actualArray);
+			
+			findCouple(null, target); // Проверяю вброс исключения, если входной массив - null
+			
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
@@ -215,13 +285,17 @@ public class ComplexExamples {
                     fuzzySearch("lw", "cartwheel"); // false
          */
 
-        System.out.println();
-        System.out.println("Тестирование функции нечеткого поиска: \n");
-        fuzzySearch("car", "ca6$$#_rtwheel");
-        fuzzySearch("cwhl", "cartwheel");
-        fuzzySearch("cwhee", "cartwheel");
-        fuzzySearch("cartwheel", "cartwheel");
-        fuzzySearch("cwheeel", "cartwheel");
-        fuzzySearch("lw", "cartwheel");
+        assert fuzzySearch("car", "ca6$$#_rtwheel");
+        assert fuzzySearch("cwhl", "cartwheel");
+        assert fuzzySearch("cwhee", "cartwheel");
+        assert fuzzySearch("cartwheel", "cartwheel");
+        assert !fuzzySearch("cwheeel", "cartwheel");
+        assert !fuzzySearch("lw", "cartwheel");
+        
+        try {
+        	fuzzySearch(null, null); // Проверяю вброс исключения, если входные строки - null
+        } catch (NoSuchElementException e) {
+        	System.out.println("Входные строки не должны быть null!");
+        }
     }
 }
